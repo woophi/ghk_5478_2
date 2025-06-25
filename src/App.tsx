@@ -92,7 +92,12 @@ export const App = () => {
     sendDataToGA({
       sum_cred: amount.toFixed(2),
       srok_kredita: years1,
-      platezh_mes: '0',
+      platezh_mes:
+        paymentType === 'Без залога'
+          ? calculateMonthlyPayment(0.339, 12, years1 * 12, amount1).toFixed(2)
+          : paymentType === 'Авто'
+          ? calculateMonthlyPayment(0.27, 12, years1 * 12, amount1).toFixed(2)
+          : calculateMonthlyPayment(0.2807, 12, years1 * 12, amount1).toFixed(2),
       chosen_option: swiperPaymentToGa[paymentType],
     }).then(() => {
       LS.setItem(LSKeys.ShowThx, true);
