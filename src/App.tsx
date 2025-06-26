@@ -90,7 +90,7 @@ export const App = () => {
   const submit = () => {
     setLoading(true);
     sendDataToGA({
-      sum_cred: amount.toFixed(2),
+      sum_cred: amount1.toFixed(2),
       srok_kredita: years1,
       platezh_mes:
         paymentType === 'Без залога'
