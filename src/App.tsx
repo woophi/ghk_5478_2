@@ -32,20 +32,31 @@ const swiperPaymentToGa: Record<string, GaPayload['chosen_option']> = {
   Недвижимость: 'property',
 };
 
+const minMaxLoanBasedOnSelection: Record<string, { min: number; max: number }> = {
+  'Без залога': { min: 30_000, max: 7_500_000 },
+  Авто: { min: 30_000, max: 7_500_000 },
+  Недвижимость: { min: 500_000, max: 30_000_000 },
+};
+const minMaxPeriodBasedOnSelection: Record<string, { min: number; max: number }> = {
+  'Без залога': { min: 1, max: 5 },
+  Авто: { min: 1, max: 5 },
+  Недвижимость: { min: 1, max: 15 },
+};
+
 export const App = () => {
   const [loading, setLoading] = useState(false);
   const [thx, setThx] = useState(LS.getItem(LSKeys.ShowThx, false));
-  const [amount, setAmount] = useState(16_000);
-  const [amount1, setAmount1] = useState(7_500_000);
+  const [paymentType, setPaymentType] = useState('Без залога');
+  const [amount1, setAmount1] = useState(minMaxLoanBasedOnSelection[paymentType].max);
   const [years1, setYears1] = useState(5);
+  const [amount, setAmount] = useState(16_000);
   const [defaultYears, setDefaultYears] = useState(5);
   const [stringYears1, setStringYears1] = useState('На 5 лет');
-  const [paymentType, setPaymentType] = useState('Без залога');
 
   const [isAutoChecked, setIsAutoChecked] = useState(false);
   const [isRealEstate, setIsRealEstate] = useState(false);
   const [step, setStep] = useState(0);
-  const [defaultSum, setDefaultSum] = useState(7_500_000);
+  const [minMaxLoanValue, setMinMaxLoan] = useState(minMaxLoanBasedOnSelection[paymentType]);
 
   const handleSumSliderChange = ({ value }: { value: number }) => {
     setAmount(value);
@@ -116,33 +127,35 @@ export const App = () => {
 
   useEffect(() => {
     if (isAutoChecked) {
-      setDefaultSum(7_500_000);
-      setAmount1(7_500_000);
+      const { min, max } = minMaxLoanBasedOnSelection['Авто'];
+      setMinMaxLoan({ min, max });
+      setAmount1(max);
     }
 
     if (isRealEstate) {
-      setDefaultSum(30_000_000);
-      setAmount1(30_000_000);
-    } else {
-      setDefaultSum(7_500_000);
-      setAmount1(7_500_000);
-    }
+      const { max, min } = minMaxLoanBasedOnSelection['Недвижимость'];
+      setMinMaxLoan({ min, max });
 
-    if (isAutoChecked && isRealEstate) {
-      setDefaultSum(30_000_000);
-      setAmount1(30_000_000);
+      setAmount1(max);
+    } else {
+      const { max, min } = minMaxLoanBasedOnSelection['Без залога'];
+      setMinMaxLoan({ min, max });
+
+      setAmount1(max);
     }
   }, [isRealEstate, isAutoChecked]);
 
   useEffect(() => {
     if (isRealEstate) {
-      setDefaultYears(15);
-      setYears1(15);
-      setStringYears1('На 15 лет');
+      const { max } = minMaxPeriodBasedOnSelection['Недвижимость'];
+      setDefaultYears(max);
+      setYears1(max);
+      setStringYears1(`На ${max} лет`);
     } else {
-      setDefaultYears(5);
-      setYears1(5);
-      setStringYears1('На 5 лет');
+      const { max } = minMaxPeriodBasedOnSelection['Без залога'];
+      setDefaultYears(max);
+      setYears1(max);
+      setStringYears1(`На ${max} лет`);
     }
   }, [isRealEstate, isAutoChecked]);
 
@@ -312,13 +325,13 @@ export const App = () => {
             sliderValue={amount1}
             onInputChange={handleSum1InputChange}
             onSliderChange={handleSum1SliderChange}
-            onBlur={() => setAmount1(prev => clamp(prev, 10_000, defaultSum))}
-            min={10_000}
-            max={defaultSum}
-            range={{ min: 10_000, max: defaultSum }}
+            onBlur={() => setAmount1(prev => clamp(prev, minMaxLoanValue.min, minMaxLoanValue.max))}
+            min={minMaxLoanValue.min}
+            max={minMaxLoanValue.max}
+            range={{ min: minMaxLoanValue.min, max: minMaxLoanValue.max }}
             pips={{
               mode: 'values',
-              values: [10_000, defaultSum],
+              values: [minMaxLoanValue.min, minMaxLoanValue.max],
               format: { to: formatPipsValue },
             }}
             step={1}
@@ -674,6 +687,11 @@ export const App = () => {
                 </div>
               </>
             )}
+          </div>
+          <div className={appSt.bottomBtnThx}>
+            <ButtonMobile loading={loading} onClick={() => setStep(0)} block view="secondary" style={{ height: '56px' }}>
+              Изменить условия
+            </ButtonMobile>
           </div>
         </div>
       )}
