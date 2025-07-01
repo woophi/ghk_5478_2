@@ -52,6 +52,7 @@ export const App = () => {
   const [amount, setAmount] = useState(16_000);
   const [defaultYears, setDefaultYears] = useState(5);
   const [stringYears1, setStringYears1] = useState('На 5 лет');
+  const [disableProducts, setDisableProducts] = useState(false);
 
   const [isAutoChecked, setIsAutoChecked] = useState(false);
   const [isRealEstate, setIsRealEstate] = useState(false);
@@ -158,6 +159,10 @@ export const App = () => {
       setStringYears1(`На ${max} лет`);
     }
   }, [isRealEstate, isAutoChecked]);
+
+  useEffect(() => {
+    setDisableProducts(years1 > 5 || amount1 > minMaxLoanValue.max);
+  }, [years1]);
 
   if (thx) {
     return <ThxLayout />;
@@ -445,50 +450,52 @@ export const App = () => {
               marginTop: '-16px',
             }}
           >
-            <div className={appSt.card}>
-              <div
-                style={{
-                  display: 'flex',
-                  justifyContent: 'space-between',
-                  width: '100%',
-                }}
-              >
-                <div style={{ display: 'flex', flexDirection: 'column' }}>
-                  <Typography.Text tag="p" view="primary-large" weight="bold" defaultMargins={false}>
-                    {calculateMonthlyPayment(0.339, 12, years1 * 12, amount1).toLocaleString('ru-RU', {
-                      minimumFractionDigits: 0,
-                      maximumFractionDigits: 0,
-                    })}{' '}
-                    ₽/мес
-                  </Typography.Text>
-                  <Typography.Text tag="p" view="primary-small" defaultMargins={false}>
-                    {amount1.toLocaleString('ru-RU', {
-                      minimumFractionDigits: 0,
-                      maximumFractionDigits: 0,
-                    })}{' '}
-                    ₽
-                  </Typography.Text>
-                  <Typography.Text tag="p" view="primary-small" defaultMargins={false}>
-                    {years1} {years1 === 1 && 'год'} {years1 > 1 && years1 <= 4 && 'года'} {years1 >= 5 && 'лет'}
-                  </Typography.Text>
-                  <Typography.Text tag="p" view="primary-small" defaultMargins={false}>
-                    Без залога
-                  </Typography.Text>
+            {!disableProducts && (
+              <div className={appSt.card}>
+                <div
+                  style={{
+                    display: 'flex',
+                    justifyContent: 'space-between',
+                    width: '100%',
+                  }}
+                >
+                  <div style={{ display: 'flex', flexDirection: 'column' }}>
+                    <Typography.Text tag="p" view="primary-large" weight="bold" defaultMargins={false}>
+                      {calculateMonthlyPayment(0.339, 12, years1 * 12, amount1).toLocaleString('ru-RU', {
+                        minimumFractionDigits: 0,
+                        maximumFractionDigits: 0,
+                      })}{' '}
+                      ₽/мес
+                    </Typography.Text>
+                    <Typography.Text tag="p" view="primary-small" defaultMargins={false}>
+                      {amount1.toLocaleString('ru-RU', {
+                        minimumFractionDigits: 0,
+                        maximumFractionDigits: 0,
+                      })}{' '}
+                      ₽
+                    </Typography.Text>
+                    <Typography.Text tag="p" view="primary-small" defaultMargins={false}>
+                      {years1} {years1 === 1 && 'год'} {years1 > 1 && years1 <= 4 && 'года'} {years1 >= 5 && 'лет'}
+                    </Typography.Text>
+                    <Typography.Text tag="p" view="primary-small" defaultMargins={false}>
+                      Без залога
+                    </Typography.Text>
+                  </div>
                 </div>
+                <ButtonMobile
+                  block={true}
+                  size="xs"
+                  onClick={() => {
+                    setPaymentType('Без залога');
+                    setStep(5);
+                  }}
+                >
+                  Выбрать
+                </ButtonMobile>
               </div>
-              <ButtonMobile
-                block={true}
-                size="xs"
-                onClick={() => {
-                  setPaymentType('Без залога');
-                  setStep(5);
-                }}
-              >
-                Выбрать
-              </ButtonMobile>
-            </div>
+            )}
 
-            {isAutoChecked && (
+            {isAutoChecked && !disableProducts && (
               <>
                 <Gap size={16} />
                 <div className={appSt.card}>
@@ -583,7 +590,7 @@ export const App = () => {
                 </div>
               </>
             )}
-            {(!isRealEstate || !isAutoChecked) && (
+            {(!isRealEstate || !isAutoChecked) && !disableProducts && (
               <>
                 <Gap size={16} />
                 <Typography.TitleResponsive font="system" tag="h3" view="small" className={appSt.productsTitle}>
@@ -592,7 +599,7 @@ export const App = () => {
               </>
             )}
 
-            {!isAutoChecked && (
+            {!isAutoChecked && !disableProducts && (
               <>
                 <Gap size={16} />
                 <div className={appSt.card}>
@@ -687,9 +694,14 @@ export const App = () => {
                 </div>
               </>
             )}
-          </div>
-          <div className={appSt.bottomBtnThx}>
-            <ButtonMobile loading={loading} onClick={() => setStep(0)} block view="secondary" style={{ height: '56px' }}>
+            <ButtonMobile
+              loading={loading}
+              onClick={() => setStep(0)}
+              block
+              view="secondary"
+              size={56}
+              style={{ marginTop: '1rem' }}
+            >
               Изменить условия
             </ButtonMobile>
           </div>
