@@ -19,6 +19,7 @@ import { LS, LSKeys } from './ls';
 import { appSt } from './style.css';
 import { ThxLayout } from './thx/ThxLayout';
 import { GaPayload, sendDataToGA } from './utils/events';
+import { getWordEnding } from './utils/words';
 
 function calculateMonthlyPayment(annualRate: number, periodsPerYear: number, totalPeriods: number, loanAmount: number) {
   const monthlyRate = annualRate / periodsPerYear;
@@ -51,8 +52,6 @@ export const App = () => {
   const [years1, setYears1] = useState(5);
   const [amount, setAmount] = useState(16_000);
   const [defaultYears, setDefaultYears] = useState(5);
-  const [stringYears1, setStringYears1] = useState('На 5 лет');
-  const [disableProducts, setDisableProducts] = useState(false);
 
   const [isAutoChecked, setIsAutoChecked] = useState(false);
   const [isRealEstate, setIsRealEstate] = useState(false);
@@ -65,14 +64,6 @@ export const App = () => {
 
   const handleYears1SliderChange = ({ value }: { value: number }) => {
     setYears1(value);
-
-    if (value === 1) {
-      setStringYears1('На 1 год');
-    } else if (value > 1 && value < 5) {
-      setStringYears1(`На ${value} года`);
-    } else {
-      setStringYears1(`На ${value} лет`);
-    }
   };
 
   const handleSum1SliderChange = ({ value }: { value: number }) => {
@@ -130,19 +121,25 @@ export const App = () => {
     if (isAutoChecked) {
       const { min, max } = minMaxLoanBasedOnSelection['Авто'];
       setMinMaxLoan({ min, max });
-      setAmount1(max);
+      if (amount1 > max) {
+        setAmount1(max);
+      }
     }
 
     if (isRealEstate) {
       const { max, min } = minMaxLoanBasedOnSelection['Недвижимость'];
       setMinMaxLoan({ min, max });
 
-      setAmount1(max);
+      if (amount1 < min) {
+        setAmount1(min);
+      }
     } else {
       const { max, min } = minMaxLoanBasedOnSelection['Без залога'];
       setMinMaxLoan({ min, max });
 
-      setAmount1(max);
+      if (amount1 > max) {
+        setAmount1(max);
+      }
     }
   }, [isRealEstate, isAutoChecked]);
 
@@ -150,19 +147,14 @@ export const App = () => {
     if (isRealEstate) {
       const { max } = minMaxPeriodBasedOnSelection['Недвижимость'];
       setDefaultYears(max);
-      setYears1(max);
-      setStringYears1(`На ${max} лет`);
     } else {
       const { max } = minMaxPeriodBasedOnSelection['Без залога'];
       setDefaultYears(max);
-      setYears1(max);
-      setStringYears1(`На ${max} лет`);
+      if (years1 > max) {
+        setYears1(max);
+      }
     }
   }, [isRealEstate, isAutoChecked]);
-
-  useEffect(() => {
-    setDisableProducts(years1 > 5 || amount1 > minMaxLoanValue.max);
-  }, [years1]);
 
   if (thx) {
     return <ThxLayout />;
@@ -374,7 +366,7 @@ export const App = () => {
               defaultMargins={false}
               style={{ textAlign: 'center' }}
             >
-              Укажите максимальную сумму, которую готовы вносить за кредит
+              Укажите максимальный срок, который готовы вносить за кредит
             </Typography.Text>
           </div>
 
@@ -382,7 +374,7 @@ export const App = () => {
 
           <SliderInput
             block={true}
-            value={stringYears1}
+            value={`На ${years1} ${getWordEnding(years1, ['год', 'года', 'лет'])}`}
             sliderValue={years1}
             onInputChange={handleYears1InputChange}
             onSliderChange={handleYears1SliderChange}
@@ -450,52 +442,56 @@ export const App = () => {
               marginTop: '-16px',
             }}
           >
-            {!disableProducts && (
-              <div className={appSt.card}>
-                <div
-                  style={{
-                    display: 'flex',
-                    justifyContent: 'space-between',
-                    width: '100%',
-                  }}
-                >
-                  <div style={{ display: 'flex', flexDirection: 'column' }}>
-                    <Typography.Text tag="p" view="primary-large" weight="bold" defaultMargins={false}>
-                      {calculateMonthlyPayment(0.339, 12, years1 * 12, amount1).toLocaleString('ru-RU', {
-                        minimumFractionDigits: 0,
-                        maximumFractionDigits: 0,
-                      })}{' '}
-                      ₽/мес
-                    </Typography.Text>
-                    <Typography.Text tag="p" view="primary-small" defaultMargins={false}>
-                      {amount1.toLocaleString('ru-RU', {
-                        minimumFractionDigits: 0,
-                        maximumFractionDigits: 0,
-                      })}{' '}
-                      ₽
-                    </Typography.Text>
-                    <Typography.Text tag="p" view="primary-small" defaultMargins={false}>
-                      {years1} {years1 === 1 && 'год'} {years1 > 1 && years1 <= 4 && 'года'} {years1 >= 5 && 'лет'}
-                    </Typography.Text>
-                    <Typography.Text tag="p" view="primary-small" defaultMargins={false}>
-                      Без залога
-                    </Typography.Text>
-                  </div>
+            <div className={appSt.card}>
+              <div
+                style={{
+                  display: 'flex',
+                  justifyContent: 'space-between',
+                  width: '100%',
+                }}
+              >
+                <div style={{ display: 'flex', flexDirection: 'column' }}>
+                  <Typography.Text tag="p" view="primary-large" weight="bold" defaultMargins={false}>
+                    {calculateMonthlyPayment(
+                      0.339,
+                      12,
+                      Math.min(years1, minMaxPeriodBasedOnSelection['Без залога'].max) * 12,
+                      Math.min(amount1, minMaxLoanBasedOnSelection['Без залога'].max),
+                    ).toLocaleString('ru-RU', {
+                      minimumFractionDigits: 0,
+                      maximumFractionDigits: 0,
+                    })}{' '}
+                    ₽/мес
+                  </Typography.Text>
+                  <Typography.Text tag="p" view="primary-small" defaultMargins={false}>
+                    {Math.min(amount1, minMaxLoanBasedOnSelection['Без залога'].max).toLocaleString('ru-RU', {
+                      minimumFractionDigits: 0,
+                      maximumFractionDigits: 0,
+                    })}{' '}
+                    ₽
+                  </Typography.Text>
+                  <Typography.Text tag="p" view="primary-small" defaultMargins={false}>
+                    {Math.min(years1, minMaxPeriodBasedOnSelection['Без залога'].max)}{' '}
+                    {getWordEnding(Math.min(years1, minMaxPeriodBasedOnSelection['Без залога'].max), ['год', 'года', 'лет'])}
+                  </Typography.Text>
+                  <Typography.Text tag="p" view="primary-small" defaultMargins={false}>
+                    Без залога
+                  </Typography.Text>
                 </div>
-                <ButtonMobile
-                  block={true}
-                  size="xs"
-                  onClick={() => {
-                    setPaymentType('Без залога');
-                    setStep(5);
-                  }}
-                >
-                  Выбрать
-                </ButtonMobile>
               </div>
-            )}
+              <ButtonMobile
+                block={true}
+                size="xs"
+                onClick={() => {
+                  setPaymentType('Без залога');
+                  setStep(5);
+                }}
+              >
+                Выбрать
+              </ButtonMobile>
+            </div>
 
-            {isAutoChecked && !disableProducts && (
+            {isAutoChecked && (
               <>
                 <Gap size={16} />
                 <div className={appSt.card}>
@@ -508,21 +504,27 @@ export const App = () => {
                   >
                     <div style={{ display: 'flex', flexDirection: 'column' }}>
                       <Typography.Text tag="p" view="primary-large" weight="bold" defaultMargins={false}>
-                        {calculateMonthlyPayment(0.27, 12, years1 * 12, amount1).toLocaleString('ru-RU', {
+                        {calculateMonthlyPayment(
+                          0.27,
+                          12,
+                          Math.min(years1, minMaxPeriodBasedOnSelection['Авто'].max) * 12,
+                          Math.min(amount1, minMaxLoanBasedOnSelection['Авто'].max),
+                        ).toLocaleString('ru-RU', {
                           minimumFractionDigits: 0,
                           maximumFractionDigits: 0,
                         })}{' '}
                         ₽/мес
                       </Typography.Text>
                       <Typography.Text tag="p" view="primary-small" defaultMargins={false}>
-                        {amount1.toLocaleString('ru-RU', {
+                        {Math.min(amount1, minMaxLoanBasedOnSelection['Авто'].max).toLocaleString('ru-RU', {
                           minimumFractionDigits: 0,
                           maximumFractionDigits: 0,
                         })}{' '}
                         ₽
                       </Typography.Text>
                       <Typography.Text tag="p" view="primary-small" defaultMargins={false}>
-                        {years1} {years1 === 1 && 'год'} {years1 > 1 && years1 <= 4 && 'года'} {years1 >= 5 && 'лет'}
+                        {Math.min(years1, minMaxPeriodBasedOnSelection['Авто'].max)}{' '}
+                        {getWordEnding(Math.min(years1, minMaxPeriodBasedOnSelection['Авто'].max), ['год', 'года', 'лет'])}
                       </Typography.Text>
                       <Typography.Text tag="p" view="primary-small" defaultMargins={false}>
                         Под залог авто
@@ -570,7 +572,7 @@ export const App = () => {
                         ₽
                       </Typography.Text>
                       <Typography.Text tag="p" view="primary-small" defaultMargins={false}>
-                        {years1} {years1 === 1 && 'год'} {years1 > 1 && years1 <= 4 && 'года'} {years1 >= 5 && 'лет'}
+                        {years1} {getWordEnding(years1, ['год', 'года', 'лет'])}
                       </Typography.Text>
                       <Typography.Text tag="p" view="primary-small" defaultMargins={false}>
                         Под залог недвижимости
@@ -590,7 +592,7 @@ export const App = () => {
                 </div>
               </>
             )}
-            {(!isRealEstate || !isAutoChecked) && !disableProducts && (
+            {(!isRealEstate || !isAutoChecked) && (
               <>
                 <Gap size={16} />
                 <Typography.TitleResponsive font="system" tag="h3" view="small" className={appSt.productsTitle}>
@@ -599,7 +601,7 @@ export const App = () => {
               </>
             )}
 
-            {!isAutoChecked && !disableProducts && (
+            {!isAutoChecked && (
               <>
                 <Gap size={16} />
                 <div className={appSt.card}>
@@ -626,7 +628,7 @@ export const App = () => {
                         ₽
                       </Typography.Text>
                       <Typography.Text tag="p" view="primary-small" defaultMargins={false}>
-                        {years1} {years1 === 1 && 'год'} {years1 > 1 && years1 <= 4 && 'года'} {years1 >= 5 && 'лет'}
+                        {years1} {getWordEnding(years1, ['год', 'года', 'лет'])}
                       </Typography.Text>
                       <Typography.Text tag="p" view="primary-small" defaultMargins={false}>
                         Под залог авто
@@ -674,7 +676,7 @@ export const App = () => {
                         ₽
                       </Typography.Text>
                       <Typography.Text tag="p" view="primary-small" defaultMargins={false}>
-                        {years1} {years1 === 1 && 'год'} {years1 > 1 && years1 <= 4 && 'года'} {years1 >= 5 && 'лет'}
+                        {years1} {getWordEnding(years1, ['год', 'года', 'лет'])}
                       </Typography.Text>
                       <Typography.Text tag="p" view="primary-small" defaultMargins={false}>
                         Под залог недвижимости
@@ -774,8 +776,7 @@ export const App = () => {
               <Divider className={appSt.divider} />
               <div className={appSt.sumCard} style={{ borderRadius: 0, marginTop: '-1px' }}>
                 <Typography.Text tag="p" view="primary-large" weight="bold" defaultMargins={false}>
-                  На {years1} {years1 === 1 && 'год'} {years1 <= 4 && years1 > 1 && 'года'}
-                  {years1 > 4 && 'лет'}
+                  На {years1} {getWordEnding(years1, ['год', 'года', 'лет'])}
                 </Typography.Text>
                 <Typography.Text tag="p" view="primary-small" color="secondary" defaultMargins={false}>
                   Срок кредита
