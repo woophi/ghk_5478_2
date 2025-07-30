@@ -48,7 +48,7 @@ export const App = () => {
   const [loading, setLoading] = useState(false);
   const [thx, setThx] = useState(LS.getItem(LSKeys.ShowThx, false));
   const [paymentType, setPaymentType] = useState('Без залога');
-  const [amount1, setAmount1] = useState(minMaxLoanBasedOnSelection[paymentType].max);
+  const [amount1, setAmount1] = useState(1_000_000);
   const [years1, setYears1] = useState(5);
   const [amount, setAmount] = useState(16_000);
   const [defaultYears, setDefaultYears] = useState(5);
@@ -244,7 +244,7 @@ export const App = () => {
               defaultMargins={false}
               style={{ textAlign: 'center' }}
             >
-              Важно чтобы это было в вашей собственности
+              Важно, чтобы это было в вашей собственности
             </Typography.Text>
           </div>
 
@@ -303,15 +303,6 @@ export const App = () => {
             >
               На какую сумму вы хотите взять кредит?
             </Typography.TitleResponsive>
-            <Typography.Text
-              tag="p"
-              view="primary-medium"
-              color="secondary"
-              defaultMargins={false}
-              style={{ textAlign: 'center' }}
-            >
-              Главное уложиться в доступный диапазон
-            </Typography.Text>
           </div>
 
           <Gap size={24} />
@@ -359,15 +350,6 @@ export const App = () => {
             >
               На какой срок?
             </Typography.TitleResponsive>
-            <Typography.Text
-              tag="p"
-              view="primary-medium"
-              color="secondary"
-              defaultMargins={false}
-              style={{ textAlign: 'center' }}
-            >
-              Укажите максимальный срок, который готовы вносить за кредит
-            </Typography.Text>
           </div>
 
           <Gap size={24} />
